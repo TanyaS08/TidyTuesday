@@ -1,0 +1,38 @@
+---
+title: "2020-96-09_Flexdashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(reactable)
+#run source code for data cleaning etc.
+source("2020-06-09.R")
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+ggplotly(p1, tooltip = c("x", "y"))
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Table A
+
+```{r}
+
+reactable(firsts)
+
+```
+
