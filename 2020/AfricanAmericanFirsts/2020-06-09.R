@@ -64,7 +64,7 @@ p1 <- ggplot(data = firsts,
   theme(legend.position = "bottom",
         plot.background = element_rect(fill = "grey50"))
 
-ggsave("2020/AmericanFirsts/2020-06-09_African-American_Achievements.png", 
+ggsave("2020/AfricanAmericanFirsts/2020-06-09_African-American_Achievements.png", 
        p1, 
        height = 6, width = 11, 
        units = "in", dpi = 300)
