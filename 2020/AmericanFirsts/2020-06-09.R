@@ -52,7 +52,7 @@ firsts <- tuesdata$firsts %>%
 #Visusalising
 
 p1 <- ggplot(data = firsts, 
-       aes(x, id = id, split = y, value = value)) +
+             aes(x, id = id, split = y, value = value)) +
   geom_parallel_sets(aes(fill = category), 
                      alpha = 0.5, 
                      axis.width = 0.4) +
@@ -64,7 +64,7 @@ p1 <- ggplot(data = firsts,
   theme(legend.position = "bottom",
         plot.background = element_rect(fill = "grey50"))
 
-ggsave("2020/week_24/African-American_Achievements.png", 
+ggsave("2020/2020-06-09_African-American_Achievements.png", 
        p1, 
        height = 6, width = 11, 
        units = "in", dpi = 300)
