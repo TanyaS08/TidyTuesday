@@ -10,6 +10,7 @@ output:
 library(flexdashboard)
 library(plotly)
 library(reactable)
+library(formattable)
 #run source code for data cleaning etc.
 source("2020-06-09.R")
 ```
