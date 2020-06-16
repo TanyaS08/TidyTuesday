@@ -22,6 +22,7 @@ library(transformr)
 library(rgeos)
 library(ggtext)
 library(ggrepel)
+library(ggmap)
 
 devtools::install_github("thebioengineer/tidytuesdayR")
 
@@ -96,7 +97,8 @@ panel_census <- ggplot() +
     plot.title = element_text(size= 22,
                               hjust=0.5,
                               color = "#4e4d47",
-                              margin = margin(b = -0.1, t = 0.5, l = 2, unit = "cm"))) 
+                              margin = margin(b = -0.1, t = 0.5, l = 2, unit = "cm"))) +
+  labs(caption = 'Source: "Historical Census Statistics on Population Totals By Race, 1790 to 1990"')
 
 ggsave("2020/AfricanAmericanHistory/StaticMap_nolabels.png", 
        panel_census, 
@@ -133,7 +135,8 @@ gif_census <- ggplot() +
                                   hjust=0.5,
                                   color = "#4e4d47",
                                   #margin = margin(b = -0.1, t = 0.3, l = 2, unit = "cm")
-                                  ))
+                                  )) +
+  labs(caption = 'Source: "Historical Census Statistics on Population Totals By Race, 1790 to 1990"')
 
 anim_save("animate_nolabels.gif", 
           animation = animate(gif_census, 
@@ -167,6 +170,7 @@ firsts <- tuesdata_09$firsts %>%
     #keep only entries that have a location name and are correct decade
     year %in% c(1790:1870) &
       index != is.na(index)) %>%
+  #new var with Two letter codes for states (matching with centers df)
   mutate(id = as.factor(str_replace_all(index, c("New York" = "NY",
                                     "Vermont" = "VT",
                                     "Pennsylvania" = "PA",
@@ -175,20 +179,30 @@ firsts <- tuesdata_09$firsts %>%
                                     "Ohio" = "OH",
                                     "Maine" = "ME",
                                     "Massachusetts" = "MA")))) %>%
+  #join with centres df by two letter country code
   left_join(.,
             centers,
             by = "id") %>%
-  #for brevity
+  #for brevity remove non-essential vars
   select(accomplishment, year, id, x, y, gender) %>%
   #add arrow end points
   mutate(yend = rep(34.18126, nrow(.)),
          xend = rep(-87.51723, nrow(.)))
+
+#Remove duplicate years to prevent overcrowding
+#' ------------------------------------------------------------------#
+#' PERHAPS POSSIBLE TO TO ACCOMODATE ALL ACHIEVEMENTS IN THE 
+#' ANIMATED PLOT.
+#' ------------------------------------------------------------------#
 firsts <- firsts[-c(13, 15, 1, 3, 11, 7, 12, 16, 17, 18 ,19),]
 
 ### >> b) Mapping ----
 
 #static map
-panel_firsts <- panel_census +
+panel_firsts <- 
+  #use previous panel plot
+  panel_census +
+  #add arrows
   geom_curve(
     data = firsts,
     aes(xend = x, 
@@ -196,13 +210,17 @@ panel_firsts <- panel_census +
         x = xend, 
         y = yend),
     curvature = -0.3,
-    arrow = arrow(length = unit(0.03, "npc"))) +  
+    arrow = arrow(length = unit(0.03, "npc"))) + 
+  #add achievements
   geom_textbox(
     data = firsts,
     aes(xend, yend, label = accomplishment),
-    width = grid::unit(0.27, "npc"), # 22% of plot panel width
+    width = grid::unit(0.27, "npc"), # 27% of plot panel width
     hjust = 0, vjust = 1,
-    size = 2)
+    halign = 0.5, # centered text
+    size = 2) +
+  #update caption for new data source
+  labs(caption = 'Source: Wikipedia, "List of African-American firsts" | "Historical Census Statistics on Population Totals By Race, 1790 to 1990"')
 
 ggsave("2020/AfricanAmericanHistory/StaticMap_WithFirsts.png", 
        panel_firsts, 
@@ -211,7 +229,7 @@ ggsave("2020/AfricanAmericanHistory/StaticMap_WithFirsts.png",
 
 #dynamic map
 
-ggplot() +
+gif_firsts <- ggplot() +
   geom_polygon(
     data = map_census, 
     aes(x = long, 
@@ -232,13 +250,14 @@ ggplot() +
     aes(xend, yend, label = accomplishment),
     width = grid::unit(0.22, "npc"), # 22% of plot panel width
     hjust = 0, vjust = 1,
-    size = 3) +
+    halign = 0.5,
+    size = 8) +
   transition_states(year) +
   labs(subtitle = "Year: {closest_state}") +
   scale_fill_gradientn( 
     colours = viridis(5), 
     name = "")  +
-  ggtitle( "Proportion of free African Americans" ) +
+  ggtitle( "Proportion of free African-Americans" ) +
   theme_void() +
   theme(
     legend.position = "bottom",
@@ -253,6 +272,102 @@ ggplot() +
     plot.subtitle  = element_text(size= 22,
                                   hjust=0.5,
                                   color = "#4e4d47",
-                                  margin = margin(b = -0.1, t = 0.3, l = 2, unit = "cm")))
+                                  margin = margin(b = -0.1, t = 0.3, l = 2, unit = "cm"))) +
+  labs(caption = 'Source: Wikipedia, "List of African-American firsts" | "Historical Census Statistics on Population Totals By Race, 1790 to 1990"')
+
+anim_save("animate_fists.gif", 
+          animation = animate(gif_firsts, 
+                              width = 1000, height = 800), 
+          path = "2020/AfricanAmericanHistory/")
+
+
+### 3) Histroy of the slave trade - global (using Plotly) ----
+### >> a) data crunching ----  
+
+#' ------------------------------------------------------------------#
+#' 
+#' THIS CHUNK IS COMPUTATIONALLY TIME CONSUMING - IMPORT THE PRODUCT 
+#'    - "routes_geocoded.csv"
+#' 
+#'slave_routes_paired <-
+#'  slave_routes  %>%
+#'  #give value to for slaves arriving
+#'  mutate(n_arrived = replace_na(n_slaves_arrived,
+#'                                1),
+#'    place_of_purchase = str_replace_all(place_of_purchase,
+#'                                        c(", port unspecified" = "",
+#'                                          ", unspecified" = "")),
+#'    port_arrival = str_replace_all(port_arrival,
+#'                                   c(", port unspecified" = "",
+#'                                     ", unspecified" = "",
+#'                                     ", colony unspecified" = ""))) %>%
+#'  #group by arrival and purchase to find routes
+#'  group_by(place_of_purchase, port_arrival) %>%
+#'  #summate for the various routes
+#'  summarise(n_arrived = sum(n_arrived)) %>%
+#'  #remove NA's i.e. incomplete routes
+#'  na.omit(.) %>%
+#'  #find geocode based on location name query
+#'  mutate_geocode(., 
+#'                 place_of_purchase) %>%
+#'  rename(lon_start = lon,
+#'         lat_start = lat) %>%
+#'  #find geocode based on location name query
+#'  mutate_geocode(., 
+#'                 port_arrival) %>%
+#'  rename(lon_end = lon,
+#'         lat_end = lat) 
+#'         
+#' write.csv(slave_routes_paired,
+#'          file = "2020/AfricanAmericanHistory/routes_geocoded.csv")
+#' ------------------------------------------------------------------#
+
+slave_routes_paired <- read.csv("2020/AfricanAmericanHistory/routes_geocoded.csv",
+                                row.names = 1) %>%
+  na.omit()
+
+slave_routes_origin <- 
+  slave_routes_paired %>%
+  #pivot into long format
+  group_by(place_of_purchase) %>%
+  summarise(n_left = sum(n_arrived)) %>%
+  mutate_geocode(.,
+                 place_of_purchase) %>%
+  rename(Port = place_of_purchase)
+
+slave_routes_list <- 
+  slave_routes_paired %>%
+  #pivot into long format
+  group_by(port_arrival) %>%
+  summarise(n_left = sum(n_arrived)) %>%
+  mutate_geocode(.,
+                 port_arrival) %>%
+  rename(Port = port_arrival) %>%
+  bind_rows(.,
+            slave_routes_origin)
+
+geo <- list(
+  scope = 'world',
+  projection = list(type = 'azimuthal equal area'),
+  showland = TRUE,
+  landcolor = toRGB("gray95"),
+  countrycolor = toRGB("gray80")
+)
+
+fig <- plot_geo(locationmode = 'world', color = I("red"))
+fig <- fig %>% add_markers(
+  data = slave_routes_list, x = ~lon, y = ~lat, text = ~Port,
+  size = ~n_left, hoverinfo = "text", alpha = 0.5
+)
+fig <- fig %>% add_segments(
+  data = slave_routes_paired,
+  x = ~lon_start, xend = ~lon_end,
+  y = ~lat_start, yend = ~lat_end,
+  alpha = 0.3, size = I(1), hoverinfo = "none"
+)
+fig <- fig %>% layout(
+  title = 'Slave trade routes<br>(Hover for port names)',
+  geo = geo, showlegend = FALSE
+)
 
 # End of script ----
