@@ -154,7 +154,7 @@ plot1 <- ggplot(distance,
            color = "#1b1f2b",
            size = 2.5) +
   facet_wrap(vars(season)) +
-  labs(caption = 'Source: Seip DR, Price E (2019) Data from: Science update for the South Peace Northern Caribou (Rangifer tarandus caribou pop. 15) in British Columbia. Movebank Data Repository. https://doi.org/10.5441/001/1.p5bn656k" | Graphic: @tanyas_08',
+  labs(caption = 'Source: Seip DR, Price E (2019) Data from: Science update for the South Peace Northern Caribou (Rangifer tarandus caribou pop. 15) in British Columbia. Movebank Data Repository. https://doi.org/10.5441/001/1.p5bn656k | Graphic: @tanyas_08',
        x = "Study Site",
        title = expression("Average dailiy distance travelled by the \n South Peace Northern Caribou"),
        fill = "Sex") +
@@ -178,7 +178,9 @@ plot1 <- ggplot(distance,
         text = element_text(colour = "#888c97"),
         plot.title = element_text(size= 22,
                                   hjust= 0.5,
-                                  margin = margin(b = -0.1, t = 1, l = 2, unit = "cm"))) +
+                                  margin = margin(b = -0.1, t = 1, l = 2, unit = "cm")),
+        plot.caption = element_text(hjust= 1,
+                                    size= 6)) +
   annotation_custom2(grob=ggplotGrob(inset), 
                      data = distance[38,],
                      ymin = 11, ymax=19, xmin=5, xmax=10)
