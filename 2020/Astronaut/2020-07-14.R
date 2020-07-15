@@ -173,21 +173,25 @@ cowplot::ggdraw(grid.arrange(
 
 ### >> d) Lollipop plots ---- 
 
-ann_arrows <- tribble(
-  ~xend, ~nationality, ~yend, ~x, ~y, ~event,
-  #--|--|--|--|--|----
-  1963, "U.S.S.R/Russia", 569, 1964, 80000,"1963: Valentina Tereshkova is the first woman in space",
-  1983, "U.S.", 13906, 1970, 50000, "1983: Sally K. Ride is the first American woman in space",
-  1965, "U.S.S.R/Russia", 195, 1970, 50000, "1965: First extravehicular activity",
-  1965, "U.S.", 4676, 1960, 70000, "1965: First extravehicular activity",
-  1994, "U.S.S.R/Russia", 103266, 2005, 90000, "1994: Most total mission hours (10 3266 hours)",
-  1997, "U.S.", 83198, 1990, 90000, "1997: Most total mission hours (83 198 hours)"
-)
-
 strip.labs <- c("USA", "RUSSIA")
 names(strip.labs) <- c("U.S.", "U.S.S.R/Russia")
 
-plot1 <- ggplot(astro_waff,
+ann_arrows <- tribble(
+  ~xend, ~nationality, ~yend, ~x, ~y, ~event,
+  #--|--|--|--|--|----
+  1963, "U.S.S.R/Russia", 569, 1970, 80000,"1963: Valentina Tereshkova is the first woman in space",
+  1983, "U.S.", 13906, 1980, 50000, "1983: Sally K. Ride is the first American woman in space",
+  1965, "U.S.S.R/Russia", 195, 1980, 90000, "18 March, 1965: First 'space walk' by Alexei Leonov for 12 minutes and 9 seconds",
+  1969, "U.S.", 6961, 1970, 70000, "20 July, 1969: Neil Armstrong and Buzz Aldrin land on the moon",
+  1968, "U.S.", 2154, 1960, 70000, "1968: The Apollo 8 is the first crewed spacecraft to orbit the moon",
+  1994, "U.S.S.R/Russia", 103266, 2005, 90000, "1994: Most total mission hours (10 3266 hours)",
+  1997, "U.S.", 83198, 1990, 90000, "1997: Most total mission hours (83 198 hours)",
+  1961, "U.S.S.R/Russia", 27, 1964, 90000, "April 12, 1961: Yuri Gagarin is the world's frist cosmonaut aboard Vostok 1"
+)
+
+
+#plot1 <- 
+  ggplot(astro_waff,
        aes(x= year_of_mission, 
            y= total_hrs_sum,
            colour = nationality)) +
@@ -248,7 +252,7 @@ plot1 <- ggplot(astro_waff,
 
 ggsave("2020/Astronaut/RaceForSpace.png", 
        plot1, 
-       height = 10.5, width = 16.8, 
+       height = 9, width = 16, 
        units = "in", dpi = 600)
 
 # End of script ----
