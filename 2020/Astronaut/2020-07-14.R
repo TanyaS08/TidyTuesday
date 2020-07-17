@@ -7,11 +7,13 @@
 
 ### 0) Preamble ----
 ### >> a) Dependencies ----
+#devtools::install_github("coolbutuseless/ggblur")
 library(tidytuesdayR)
 library(tidyverse)
 library(tidylog)
 library(extrafont)
 library(ggtext)
+library(ggblur)
 
 #todays prompts
 options(prompt = "\U1F680",
@@ -57,27 +59,34 @@ ann_arrows <- tribble(
   #--|--|--|--|--|----
   1963, "U.S.S.R/Russia", 569, 1970, 80000,"1963: Valentina Tereshkova is the first woman in space",
   1983, "U.S.", 13906, 1980, 50000, "1983: Sally K. Ride is the first American woman in space",
-  1965, "U.S.S.R/Russia", 195, 1980, 90000, "18 March, 1965: First 'space walk' by Alexei Leonov for 12 minutes and 9 seconds",
+  1965, "U.S.S.R/Russia", 195, 1980, 89000, "18 March, 1965: First 'space walk' by Alexei Leonov for 12 minutes and 9 seconds",
   1969, "U.S.", 6961, 1970, 70000, "20 July, 1969: Neil Armstrong and Buzz Aldrin land on the moon",
   1968, "U.S.", 2154, 1960, 70000, "1968: The Apollo 8 is the first crewed spacecraft to orbit the moon",
-  1994, "U.S.S.R/Russia", 103266, 2005, 90000, "1994: Most total mission hours (10 3266 hours)",
+  1994, "U.S.S.R/Russia", 103266, 2005, 90000, "1994: Most total mission hours (103 266 hours)",
   1997, "U.S.", 83198, 1990, 90000, "1997: Most total mission hours (83 198 hours)",
   1961, "U.S.S.R/Russia", 27, 1964, 90000, "April 12, 1961: Yuri Gagarin is the world's frist cosmonaut aboard Vostok 1"
 )
 
 
 plot1 <- 
-  ggplot(astro_waff,
-         aes(x= year_of_mission, 
-             y= total_hrs_sum,
-             colour = nationality)) +
-  #points of lollipops
-  geom_point(aes(
+ggplot(astro_waff,
+       aes(x= year_of_mission, 
+           y= total_hrs_sum,
+           colour = nationality)) +
+  #base points using gradient fill to create variang 'star' intensities
+  geom_point_blur(aes(
     #play with transparency to create star glow
     fill=alpha(total_hrs_sum, 0.3)),
     alpha = 0.4, 
     shape = 21, 
     stroke= 1.5,
+    show.legend = FALSE, 
+    blur_size = 20) + 
+  #new layer of points to enhance colours between USA and RUS
+  geom_point_blur(aes(
+    colour = nationality, 
+    blur_size = total_hrs_sum),
+    alpha = 0.2, 
     show.legend = FALSE) + 
   #sticks of lollipops
   geom_segment(aes(x = year_of_mission, 
@@ -85,7 +94,7 @@ plot1 <-
                    y = 0, 
                    yend = total_hrs_sum),
                alpha = 0.3,
-               size = 0.1,
+               size = 0.2,
                show.legend = FALSE) +
   facet_wrap(vars(nationality), 
              labeller = labeller(nationality = strip.labs)) +
@@ -117,11 +126,13 @@ plot1 <-
   scale_color_manual(values = c("#413BA3", "#A34E4F")) +
   labs(title = "THE RACE FOR SPACE",
        caption = "Source: The Astronaut Database (https://data.mendeley.com/datasets/86tsnnbv2w/1) | Graphic: @tanyas_08",
-       subtitle = "Russia had its first mission into space in 1961, USA followed in 1962. \n Up to 2019 Russia has spent 2 058 416 hours \n and the USA 1 438 251 hours exploring space") +
+       subtitle = "Showing the total hours spent in space each year between 1961 & 2019. \n Russia has spent 2 058 416 and the USA 1 438 251 hours \n exploring space during this period") +
   theme(panel.background = element_rect("#1b1f2b"),
         panel.grid = element_blank(),
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
+        axis.text.x = element_text(colour = "#888c97",
+                                   family = "Courier New"),
         rect = element_rect("#1b1f2b"),
         text = element_text(colour = "#888c97",
                             family = "Courier New"),
