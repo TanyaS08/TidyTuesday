@@ -20,6 +20,11 @@ library(ggtext)
 library(ggrepel)
 library(ggridges)
 library(cowplot)
+library(mdthemes)
+library(gt)
+
+loadfonts()
+
 
 #todays prompts
 options(prompt = "\U1F427",
@@ -52,57 +57,110 @@ cute_penguins <- grid::rasterGrob(img, interpolate = T)
 
 pal <- c("#FF8C00", "#A034F0", "#159090")
 
+#data dictionary
+
+data_dictionary <- 
+  tribble(
+    ~Variable, ~Description,
+    "species", "a factor denoting penguin species (Adélie, Chinstrap and Gentoo)",
+    "island", "a factor denoting island in Palmer Archipelago, Antarctica (Biscoe, Dream or Torgersen)",
+    "bill_length_mm", "a number denoting bill length (millimeters)",
+    "bill_depth_mm", "a number denoting bill depth (millimeters)",
+    "flipper_length_mm", "an integer denoting flipper length (millimeters)",
+    "body_mass_g", "an integer denoting body mass (grams)",
+    "sex", "a factor denoting penguin sex (female, male)"
+  )
+
+data_table <-
+  gt(data_dictionary)%>%
+  tab_style(
+    style = cell_fill(color = "#fffff0"),
+    locations = cells_body(
+      columns = vars(Variable, Description))) %>%
+  tab_header(title = "{Penguins} data dictionary"
+  ) %>%
+  tab_style(
+    style = cell_text(font = ".New York"),
+    locations = cells_body(
+      columns = vars(Variable, Description)))
+
 ### 1) Plotting ----
 ### >> a) Chinstrap - bill depth:bill length ---- 
 
 chinstrap <- penguins %>%
   filter(species == "Chinstrap")
 
-plot_chin <- ggplot(chinstrap) +
+cinstarp_summ <- chinstrap %>%
+  select(sex, bill_length_mm, bill_depth_mm) %>%
+  group_by(sex) %>%
+  summarise_all(list(median = median,
+                     sd = sd))
+
+
+plot_chin <- 
+  ggplot(chinstrap) +
+  geom_errorbar(
+    data = cinstarp_summ,
+    aes(x = bill_length_mm_median,
+        ymin = bill_depth_mm_median - bill_depth_mm_sd,
+        ymax = bill_depth_mm_median + bill_depth_mm_sd,
+        color = sex),
+    width = .8,
+    size = .8,
+    show.legend = FALSE
+  ) +
+  geom_errorbar(
+    data = cinstarp_summ,
+    aes(y = bill_depth_mm_median,
+        xmin = bill_length_mm_median - bill_length_mm_sd,
+        xmax = bill_length_mm_median + bill_length_mm_sd,
+        color = sex),
+    width = .3,
+    size = .8,
+    show.legend = FALSE
+  ) +
   geom_point(aes(x = bill_length_mm,
                  y = bill_depth_mm,
-                 colour = sex),
+                 fill = sex),
+             shape = 21,
+             color = "transparent",
+             alpha = .7,
              show.legend = FALSE) +
-  stat_smooth(aes(x = bill_length_mm,
-                  y = bill_depth_mm,
-                  colour = sex),
-              method = "lm",
-              alpha = 0.2,
-              show.legend = FALSE) +
-  scale_colour_manual(values = c("#C07EF2","#A034F0"))  +
-  theme_void() +
+  scale_colour_manual(values = c("#C07EF2","#A034F0")) +
+  scale_fill_manual(values = c("#C07EF2","#A034F0")) +
   labs(x = "Bill length (mm)",
-       y = "Bill depth (mm)") +
-  theme(plot.background = element_rect(fill="#fffff003", color = "#fffff003"),
-        panel.background = element_rect(fill="#fffff003", color = "#fffff003"),
-        legend.box.background = element_rect(fill="#fffff003", color = "#fffff003"),
-        legend.background = element_rect(fill="#fffff003", color = "#fffff003"),
-        legend.title = element_blank(),
-        strip.background = element_rect(fill="#fffff003", color = "#fffff003"),
-        legend.position = c(0.1, 0.85))
+       y = "Bill depth (mm)",
+       subtitle = "Regression analyses between continuous variables are still an option<br/> here we can  look at the ratio of bill length to depth <br/> for  <b style='color:#C07EF2'>female</b> and <b style='color:#A034F0'>male</b> Chinstrap penguins<br/>") +
+  theme(plot.background = element_rect(fill="transparent", color = NA),
+        panel.background = element_rect(fill="transparent", color = NA),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        plot.subtitle = element_markdown(halign = 0,
+                                         size = 10),
+        panel.grid = element_blank(),
+        text = element_text(family = ".New York"))
 
 
 ### >> b) Gentoo - boxplots ---- 
 
-gentoo <- penguins %>%
-  filter(species == "Gentoo",
-         year == 2007) %>%
-  select(-c(species,island,year, body_mass_g)) %>%
-  pivot_longer(cols = -sex) %>%
-  group_by(name) %>%
+adelie <- penguins %>%
+  filter(species == "Adélie") %>%
+  select(c(island, body_mass_g, sex)) %>%
+  pivot_longer(cols = -c(sex, island)) %>%
   mutate(sex = as.factor(sex),
-         value = scale(value)) 
+         island = as.factor(island)) 
 
-gentoo <- ggplot(data = gentoo) +
-  geom_violin(aes(x = name,
+adelie_plot <- 
+  ggplot(data = adelie) +
+  geom_violin(aes(x = island,
                   y = value,
                   fill = sex,
                   colour = sex), 
               position = position_dodge(0.8),
               show.legend = FALSE,
-              alpha = 0.3,
+              alpha = 0.6,
               scale = "area") +
-  geom_dotplot(aes(x = name,
+  geom_dotplot(aes(x = island,
                    y = value,
                    fill = sex),
                binaxis = "y", 
@@ -110,28 +168,35 @@ gentoo <- ggplot(data = gentoo) +
                stackratio = 0.9, 
                position = position_dodge(0.8),
                alpha = 0.5,
-               colour = "#808078",
+               color = "transparent",
                dotsize = 0.7,
                show.legend = FALSE) +
-  scale_fill_manual(values = c("#159090","#0C4F4F")) +
-  scale_colour_manual(values = c("#15909005","#0C4F4F05")) +
+  scale_fill_manual(values = c("#FFAF4D","#FF8C00")) +
+  scale_colour_manual(values = c("#FFAF4D05","#FF8C0005")) +
   labs(x = "",
-       y = "Value (scaled)") +
-  theme_void()
-  theme(plot.background = element_rect(fill="#fffff0", color = "#fffff0"),
-        panel.background = element_rect(fill="#fffff0", color = "#fffff0"),
+       y = "Body mass (g)",
+       subtitle = "We have multiple categorical data<br/> here we can  look at body mass between  <b style='color:#FFAF4D'>female</b> and <b style='color:#FF8C00'>male</b> Adélie penguins<br/> on different islands") +
+  theme(plot.background = element_rect(fill="transparent", color = NA),
+        panel.background = element_rect(fill="transparent", color = NA),
         legend.box.background = element_rect(fill="#fffff0", color = "#fffff0"),
-        panel.grid.major.y = element_line(colour = "#808078"),
+        panel.grid = element_blank(),
         legend.background = element_rect(fill="#fffff0", color = "#fffff0"),
         legend.title = element_blank(),
-        legend.position = c(0.1, 0.85))
+        legend.position = c(0.1, 0.85),
+        axis.line.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.y = element_blank(),
+        plot.subtitle = element_markdown(halign = 0,
+                                         size = 10),
+        text = element_text(family = ".New York")) +
+  scale_x_discrete(position = "top")
 
 ### >> c) All - ridgeplots ---- 
 
 ridge <- ggplot(data = penguins %>%
-         select(-c(year,island)) %>%
-         pivot_longer(cols = -c(sex, species)) %>%
-         mutate(species_sex = paste(species, "_", sex))) +
+                  select(-c(year,island)) %>%
+                  pivot_longer(cols = -c(sex, species)) %>%
+                  mutate(species_sex = paste(species, "_", sex))) +
   stat_density_ridges(aes(x = value,
                           y = species,
                           fill = species_sex,
@@ -151,35 +216,38 @@ ridge <- ggplot(data = penguins %>%
                                       "body_mass_g" = "Body mass (g)",
                                       "flipper_length_mm" = "Flipper length (mm)")))  +
   labs(x = "",
-       y = "") +
-  theme_void() +
-  theme(plot.background = element_rect(fill="#fffff0", color = "#fffff0"),
-        panel.background = element_rect(fill="#fffff0", color = "#fffff0"),
+       y = "",
+       caption = "With four continuous variables to choose from there are many ways to 'torture' this dataset<br/> here we can see a density distribution of the body measurements for<br/> <b style='color:#FF8C00'>Adélie</b>, <b style='color:#A034F0'>Chinstrap</b> and <b style='color:#0C4F4F'>Gentoo</b> penguins (females are the lighter shade)") +
+  theme(plot.background = element_rect(fill="transparent", color = NA),
+        panel.background = element_rect(fill="#fffff0", color = NA),
         legend.box.background = element_rect(fill="#fffff0", color = "#fffff0"),
         legend.background = element_rect(fill="#fffff0", color = "#fffff0"),
         legend.title = element_blank(),
         strip.background = element_rect(fill="#fffff0", color = "#fffff0"),
-        legend.position = c(0.1, 0.85))
+        legend.position = c(0.1, 0.85),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        text = element_text(family = ".New York"),
+        plot.caption = element_markdown(halign = 1,
+                                        size = 10))
 
 ### >> a) Main Map ---- 
 p <- ggplot(antarctica, 
             aes(long, lat, group = group)) +
-  geom_polygon(fill = "#506B8E02", 
+  geom_polygon(fill = "#506B8E", 
                alpha = .8) +
   coord_map("ortho", 
             orientation = c(-90, 0, 0),
             xlim = c(-62, -55),
-            ylim = c(-75, - 60)) +
-  scale_color_manual(values = c("#53868B", "#c02728", "#1874CD")) +
-  labs(title = "Move over Iris dataset",
-       subtitle = "a new dataset - the Palmer Penguins by Gorman, Williams and Fraser (2014)\n that can be used as an alternative to making pretty visuals the iris dataset",
-       caption = "Source: Gorman, Williams & Fraser (2014) DOI: 10.1371/journal.pone.0090081|Visualization: @TanyaS_08|Illustrations: Allison Horst") +
+            ylim = c(-75, - 60))  +
+  #labs(title = "Move over Iris dataset") +
+  #subtitle = "A new dataset - the Palmer Penguins by Gorman,\n Williams and Fraser (2014)\n has been making waves recently as\n an alternative to the iris dataset.\n A lot of the pushback with regards to the iris dataset has to do\n with the fact that it is rooted in a eugenic past.\n So why not use this dataset that was developed\n as an alternative - with bonus cute penguins!",
+  #caption = "Source: Gorman, Williams & Fraser (2014) DOI: 10.1371/journal.pone.0090081| Visualization: @TanyaS_08| Illustrations: Allison Horst") +
   theme_void() +
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5, size = 20),
         plot.subtitle =  element_text(hjust = 0.5),
         plot.background = element_rect(fill="#fffff0", color = "#fffff0"),
-        plot.margin = unit(c(0,4,0,3), "cm")) 
+        plot.margin = unit(c(8,6,0,10), "cm")) 
 
 inset <- ggplot(antarctica, aes(long, lat, group = group)) +
   geom_polygon(fill = "#506B8E") +
@@ -192,13 +260,45 @@ inset <- ggplot(antarctica, aes(long, lat, group = group)) +
            ymin = -75, ymax = -60) +
   theme_map()
 
-ggdraw(p) +
-  draw_plot(inset, .6, .0, .45, .45) +
-  draw_plot(plot_chin, .0, .55, .4, .3) +
-  draw_plot(ridge, .44, .45, .5, .4) +
-  draw_plot(gentoo, .0, .0, .4, .3) +
+plot <- 
+  ggdraw(p) +
+  draw_plot(plot_chin, .01, .45, .4, .3) +
+  draw_plot(ridge, .53, .19, .45, .35) +
+  draw_plot(adelie_plot, .01, .0, .4, .37) +
+  #draw_plot(inset, .3, -.03, .45, .45) +
   draw_image("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/man/figures/lter_penguins.png", 
-             0.45, 0.1, .3, .3)
+             0.67, 0.65, .3, .3) +
+  draw_label(label = "THERE'S A NEW DATASET IN TOWN",
+             x = 0.01, y = 0.93, hjust = 0, vjust = 0,
+             fontfamily = "Impact",
+             size = 40) +
+  draw_label(label = "Presenting the {penguins} dataset. An alternative to {iris} that can be used to",
+             x = 0.01, y = 0.92, hjust = 0, vjust = 1,
+             fontfamily = ".New York",
+             size = 15) +
+  draw_label(label = "demonstrate many data science concepts like:",
+             x = 0.01, y = 0.88, hjust = 0, vjust = 0,
+             fontfamily = ".New York",
+             size = 15) +
+  draw_label(label = "correlation, regression, classification.",
+             x = 0.01, y = 0.855, hjust = 0, vjust = 0,
+             fontfamily = ".New York",
+             size = 15) +
+  draw_label(label = "With cute penguins and without a problematic past!",
+             x = 0.01, y = 0.83, hjust = 0, vjust = 0,
+             fontfamily = ".New York",
+             size = 15) +
+  draw_label(label = "Source: Gorman, Williams & Fraser (2014) DOI: 10.1371/journal.pone.0090081| Visualization: @TanyaS_08| Illustrations: Allison Horst",
+            x = 0.01, y = 0.81, hjust = 0, vjust = 0,
+            fontfamily = ".New York",
+            size = 6) +
+  draw_image("https://github.com/TanyaS08/TidyTuesday/blob/master/2020/Penguins/data_table.png?raw=true", 
+             0.25, 0.57, .52, .32)
+
+ggsave("2020/Penguins/NewDatasetInTown.png", 
+       plot, 
+       height = 10.8, width = 17, 
+       units = "in", dpi = 600)
 
 
-
+# End of script ----
