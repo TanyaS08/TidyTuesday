@@ -22,8 +22,21 @@ library(ggridges)
 library(cowplot)
 library(mdthemes)
 library(gt)
+library(sysfonts)
+library(showtext)
 
-loadfonts()
+font_add_google("Fredericka the Great",
+                "Fredericka")
+font_add_google("Josefin Slab",
+                "Josefin")
+
+font_paths()  
+font_files()
+font_families()
+
+trace(grDevices::png, exit = quote({
+  showtext::showtext_begin()
+}), print = FALSE)
 
 
 #todays prompts
@@ -49,12 +62,7 @@ penguin_location <-
     long_x = c(-64.2333, -65.5000, -64.083333)
   ) 
 
-
-
-url <- "https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/man/figures/lter_penguins.png"
-img <- png::readPNG(RCurl::getURLContent(url))
-cute_penguins <- grid::rasterGrob(img, interpolate = T)
-
+#Colour palette (Adelie, Chinstrap, Gentoo)
 pal <- c("#FF8C00", "#A034F0", "#159090")
 
 #data dictionary
@@ -77,10 +85,10 @@ data_table <-
     style = cell_fill(color = "#fffff0"),
     locations = cells_body(
       columns = vars(Variable, Description))) %>%
-  tab_header(title = "{Penguins} data dictionary"
+  tab_header(title = "{penguins} data dictionary"
   ) %>%
   tab_style(
-    style = cell_text(font = ".New York"),
+    style = cell_text(font = "Josefin"),
     locations = cells_body(
       columns = vars(Variable, Description)))
 
@@ -135,10 +143,10 @@ plot_chin <-
         panel.background = element_rect(fill="transparent", color = NA),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        plot.subtitle = element_markdown(halign = 0,
-                                         size = 10),
+        plot.subtitle = element_markdown(hjust = 0,
+                                         size = 9),
         panel.grid = element_blank(),
-        text = element_text(family = ".New York"))
+        text = element_text(family = "Josefin"))
 
 
 ### >> b) Gentoo - boxplots ---- 
@@ -175,7 +183,7 @@ adelie_plot <-
   scale_colour_manual(values = c("#FFAF4D05","#FF8C0005")) +
   labs(x = "",
        y = "Body mass (g)",
-       subtitle = "We have multiple categorical data<br/> here we can  look at body mass between  <b style='color:#FFAF4D'>female</b> and <b style='color:#FF8C00'>male</b> Adélie penguins<br/> on different islands") +
+       subtitle = "Multiple categorical data present different grouping options <br/> here we can  look at body mass between  <b style='color:#FFAF4D'>female</b> and <b style='color:#FF8C00'>male</b> Adélie penguins<br/> on different islands") +
   theme(plot.background = element_rect(fill="transparent", color = NA),
         panel.background = element_rect(fill="transparent", color = NA),
         legend.box.background = element_rect(fill="#fffff0", color = "#fffff0"),
@@ -186,9 +194,9 @@ adelie_plot <-
         axis.line.y = element_blank(),
         axis.ticks = element_blank(),
         axis.text.y = element_blank(),
-        plot.subtitle = element_markdown(halign = 0,
-                                         size = 10),
-        text = element_text(family = ".New York")) +
+        plot.subtitle = element_markdown(hjust = 0,
+                                         size = 9),
+        text = element_text(family = "Josefin")) +
   scale_x_discrete(position = "top")
 
 ### >> c) All - ridgeplots ---- 
@@ -227,12 +235,13 @@ ridge <- ggplot(data = penguins %>%
         legend.position = c(0.1, 0.85),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        text = element_text(family = ".New York"),
-        plot.caption = element_markdown(halign = 1,
-                                        size = 10))
+        text = element_text(family = "Josefin"),
+        plot.caption = element_markdown(hjust = 1,
+                                        size = 9))
 
 ### >> a) Main Map ---- 
-p <- ggplot(antarctica, 
+antarctica <- 
+  ggplot(antarctica, 
             aes(long, lat, group = group)) +
   geom_polygon(fill = "#506B8E", 
                alpha = .8) +
@@ -240,60 +249,66 @@ p <- ggplot(antarctica,
             orientation = c(-90, 0, 0),
             xlim = c(-62, -55),
             ylim = c(-75, - 60))  +
-  #labs(title = "Move over Iris dataset") +
-  #subtitle = "A new dataset - the Palmer Penguins by Gorman,\n Williams and Fraser (2014)\n has been making waves recently as\n an alternative to the iris dataset.\n A lot of the pushback with regards to the iris dataset has to do\n with the fact that it is rooted in a eugenic past.\n So why not use this dataset that was developed\n as an alternative - with bonus cute penguins!",
-  #caption = "Source: Gorman, Williams & Fraser (2014) DOI: 10.1371/journal.pone.0090081| Visualization: @TanyaS_08| Illustrations: Allison Horst") +
-  theme_void() +
-  theme(legend.position = "none",
-        plot.subtitle =  element_text(hjust = 0.5),
-        plot.background = element_rect(fill="#fffff0", color = "#fffff0"),
-        plot.margin = unit(c(8,6,0,10), "cm")) 
+  theme_void()
 
-inset <- ggplot(antarctica, aes(long, lat, group = group)) +
-  geom_polygon(fill = "#506B8E") +
-  # This is where the magic happens
-  coord_map("ortho", orientation = c(-90, 0, 0)) +
-  annotate("rect", 
-           color = "#808078", 
-           fill = "transparent",
-           xmin = -68, xmax = -54,
-           ymin = -75, ymax = -60) +
-  theme_map()
+main <-
+ggplot(data = tibble(x = seq(from = 0,
+                             to = 1,
+                             by = 0.1),
+                     y = seq(from = 0,
+                             to = 1,
+                             by = 0.1)),
+       aes(x = x,
+           y = x)) +
+  geom_point(
+    colour = "#fffff0"
+  ) +
+  labs(title = "THERE'S A NEW DATASET IN TOWN",
+       subtitle = "Presenting the {penguins} dataset.<br/> An alternative to {iris} that can be used to demonstrate many data science concepts like:<br/>correlation, regression, classification.<br/>With cute penguins and without a problematic past!",
+       caption = "Source: Gorman, Williams & Fraser (2014) DOI: 10.1371/journal.pone.0090081| Visualization: @TanyaS_08| Illustrations: Allison Horst") +
+  geom_textbox(aes(
+    label = "**DATA DICTIONARY**
+    <br/>**species** - Penguin species (Adelie, Gentoo, Chinstrap)<br/>
+    **island** - Island where recorded (Biscoe, Dream, Torgersen)<br/>
+    **bill_length_mm** - Bill length in millimeters<br/>
+    **bill_depth_mm** - Bill depth in millimeters<br/>
+    **flipper_length_mm** - Flipper length in mm<br/>
+    **body_mass_g** -Body mass in grams<br/>
+    **sex** - sex of the animal<br/>
+    **year** - year recorded",
+    x = 0.57,
+    y = 1,
+    vjust = 1),
+    fill = "#fffff0",
+    box.colour = "#fffff0",
+    size = 3.5,
+    width = 0.3) +
+  theme(plot.title =  element_text(family = "Fredericka",
+                                   vjust = 1,
+                                   size = 42),
+        plot.background = element_rect(fill="#fffff0", 
+                                       color = "#fffff0"),
+        panel.background = element_rect(fill="#fffff0", 
+                                        color = NA),
+        plot.subtitle = element_markdown(hjust = 0,
+                                         size = 17,
+                                         family = "Josefin"),
+        plot.caption = element_text(family = "Josefin",
+                                    hjust = 0),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
 
-plot <- 
-  ggdraw(p) +
-  draw_plot(plot_chin, .01, .45, .4, .3) +
+#plot <- 
+  ggdraw(main) +
+  draw_plot(antarctica, .02, .0, 1, .8) +
+  draw_plot(plot_chin, .01, .45, .43, .35) +
   draw_plot(ridge, .53, .19, .45, .35) +
   draw_plot(adelie_plot, .01, .0, .4, .37) +
-  #draw_plot(inset, .3, -.03, .45, .45) +
   draw_image("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/man/figures/lter_penguins.png", 
-             0.67, 0.65, .3, .3) +
-  draw_label(label = "THERE'S A NEW DATASET IN TOWN",
-             x = 0.01, y = 0.93, hjust = 0, vjust = 0,
-             fontfamily = "Impact",
-             size = 40) +
-  draw_label(label = "Presenting the {penguins} dataset. An alternative to {iris} that can be used to",
-             x = 0.01, y = 0.92, hjust = 0, vjust = 1,
-             fontfamily = ".New York",
-             size = 15) +
-  draw_label(label = "demonstrate many data science concepts like:",
-             x = 0.01, y = 0.88, hjust = 0, vjust = 0,
-             fontfamily = ".New York",
-             size = 15) +
-  draw_label(label = "correlation, regression, classification.",
-             x = 0.01, y = 0.855, hjust = 0, vjust = 0,
-             fontfamily = ".New York",
-             size = 15) +
-  draw_label(label = "With cute penguins and without a problematic past!",
-             x = 0.01, y = 0.83, hjust = 0, vjust = 0,
-             fontfamily = ".New York",
-             size = 15) +
-  draw_label(label = "Source: Gorman, Williams & Fraser (2014) DOI: 10.1371/journal.pone.0090081| Visualization: @TanyaS_08| Illustrations: Allison Horst",
-            x = 0.01, y = 0.81, hjust = 0, vjust = 0,
-            fontfamily = ".New York",
-            size = 6) +
-  draw_image("https://github.com/TanyaS08/TidyTuesday/blob/master/2020/Penguins/data_table.png?raw=true", 
-             0.25, 0.57, .52, .32)
+             0.67, 0.65, .3, .3)
+
 
 ggsave("2020/Penguins/NewDatasetInTown.png", 
        plot, 
