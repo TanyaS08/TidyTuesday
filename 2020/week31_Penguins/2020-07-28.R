@@ -255,7 +255,8 @@ ggplot(data = tibble(x = seq(from = 0,
     fill = "#fffff0",
     box.colour = "#fffff0",
     size = 3.5,
-    width = 0.3) +
+    width = 0.3,
+    family = "Josefin") +
   theme(plot.title =  element_text(family = "Fredericka",
                                    vjust = 1,
                                    size = 42),
