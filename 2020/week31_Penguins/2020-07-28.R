@@ -25,6 +25,7 @@ library(gt)
 library(sysfonts)
 library(showtext)
 
+
 font_add_google("Fredericka the Great",
                 "Fredericka")
 font_add_google("Josefin Slab",
