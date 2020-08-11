@@ -158,7 +158,7 @@ avatar <-
                                   "Toph"))
 
 #streamplot
-#plot <- 
+plot <- 
 ggplot(data = avatar,
        aes(x = name,
            y = value,
@@ -233,8 +233,10 @@ ggplot(data = avatar,
          title = "Avatar: The Last Word",
          caption = "Data from {appa} (https://github.com/averyrobbins1/appa) and  https://avatar.fandom.com/wiki/Avatar_Wiki\n Visualisation and illustrations by @TanyaS_08",
          subtitle = "<p>Over the 61 episodes there were 9 992 spoken instances<br/>  spread across 363 different characters.</p><br/> 
-        <p>Of the 8 main characters <b style='color:#87AFD1'>Aang</b> is the most chatty<br/>with 1 819 dialogue instances.<br/>
-        <b style='color:#FF4500'>Ozai</b> says the least, having only 64 dialogue instances.</p><br/>
+        <p>Unsurprisingly <b style='color:#1DB4D3'>Sokka</b> has the last word the most often - closing out 15 chapters<br/>
+        Although, <b style='color:#87AFD1'>Aang</b> has the most to say - having the most dialogue instances.<br/>
+        <b style='color:#015E05'>Toph</b> has the final say the least - closing out only 2 chapters<br/>
+        <b style='color:#FF4500'>Ozai</b> has the least to say over the three books</p><br/>
         <p>The chapters indicated on the horizontal axis indicate when a <br/>character had their most dialogue instances.</p>") +
     theme(axis.text.y = element_blank(),
           axis.text.x = element_markdown(size = 12),
@@ -247,7 +249,7 @@ ggplot(data = avatar,
           panel.grid.minor.x = element_blank(),
           legend.background = element_rect(fill = NA,
                                            color = NA),
-          plot.subtitle = element_markdown(size = 14)) +
+          plot.subtitle = element_markdown(size = 13)) +
     scale_x_continuous(breaks = c(6, 12, 14, 45, 47, 51, 53, 54),
                        labels = c("Ch.6<br/><b style='color:#174D79'>Katara</b>",
                                   "<br/><br/>Ch.12<br/><b style='color:#572530'>Iroh</b>",
@@ -261,42 +263,10 @@ ggplot(data = avatar,
 
 ggsave("2020/week33_Avatar/LastWord.png", 
        plot, 
-       height = 8.3, width = 15, 
+       height = 10, width = 15, 
        units = "in", dpi = 600)
 
 # End of script ----
 
-avatar_raw %>%
-    mutate(character = case_when(str_detect(character, "Toph")  ~ "Toph",
-                                 str_detect(character, "Aang")  ~ "Aang",
-                                 str_detect(character, "Sokka")  ~ "Sokka",
-                                 str_detect(character, "Katara")  ~ "Katara",
-                                 str_detect(character, "Iroh")  ~ "Iroh",
-                                 str_detect(character, "Ozai")  ~ "Ozai",
-                                 str_detect(character, "Azula")  ~ "Azula",
-                                 str_detect(character, "Zuko")  ~ "Zuko",)) %>%
-    na.omit()  %>% 
-    filter(chapter == "The Fortuneteller")
-
-x <- avatar_raw %>%
-    mutate(character = case_when(str_detect(character, "Toph")  ~ "Toph",
-                                 str_detect(character, "Aang")  ~ "Aang",
-                                 str_detect(character, "Sokka")  ~ "Sokka",
-                                 str_detect(character, "Katara")  ~ "Katara",
-                                 str_detect(character, "Iroh")  ~ "Iroh",
-                                 str_detect(character, "Ozai")  ~ "Ozai",
-                                 str_detect(character, "Azula")  ~ "Azula",
-                                 str_detect(character, "Zuko")  ~ "Zuko",)) %>%
-    na.omit()  %>% 
-    group_by(chapter, character) %>%
-    tally()
-    #most per episode by charcater
-    #Aang      The Fortuneteller           73
-    
-    #most per episode
-    #The Ember Island Players                  181
-    
-    #least per episode
-    # Appa's Lost Days                              14
     
     
