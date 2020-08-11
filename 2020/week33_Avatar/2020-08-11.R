@@ -16,6 +16,7 @@ library(showtext)
 library(tvthemes)
 library(ggforce)
 library(rvest)
+library(cowplot)
 library(ggalluvial)
 library(ggtext)
 library(ggstream)
@@ -259,7 +260,6 @@ ggplot(data = avatar,
                                   "<br/><br/>Ch.51<br/><b style='color:#FF4500'>Ozai</b>",
                                   "Ch.53<br/><b style='color:#A10000'>Zuko</b>",
                                   "<br/><br/>Ch.54<br/><b style='color:#1DB4D3'>Sokka</b>"))
-
 
 ggsave("2020/week33_Avatar/LastWord.png", 
        plot, 
