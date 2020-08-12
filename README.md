@@ -1,4 +1,6 @@
-# TidyTuesday
+<h1 style="font-weight:normal" align="center">
+  &nbsp;#TidyTuesday Contributions&nbsp;
+</h1>
 
 <div align="center">
 
