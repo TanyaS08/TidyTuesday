@@ -9,27 +9,33 @@
 library(tidytuesdayR)
 library(tidyverse)
 library(tidylog)
-library(lubridate)
 library(ggforce)
 library(sysfonts)
 library(showtext)
-library(tvthemes)
-library(ggforce)
-library(rvest)
-library(cowplot)
-library(ggalluvial)
-library(ggtext)
-library(ggstream)
-library(ggTimeSeries)
+library(tvthemes) #for avatar theme
+library(rvest) #for webscraping
+library(cowplot) #for adding images
+library(ggstream) #for streamplots
 library(extrafont)
+library(ggtext)
+library(magick)
+library(grid)
+library(png)
+
 loadfonts() ## You need to do this at the beginning of a session.
-pdfFonts()
+
+showtext_auto()
+
+trace(grDevices::png, exit = quote({
+    showtext::showtext_begin()
+}), print = FALSE)
+
 
 #todays prompts
 options(prompt = "\U1F30A",
         continue = "\U1F525")
 
-# import fonts
+# import fonts for theme
 import_avatar()
 
 ### >> b) Import data and clean ----
@@ -38,29 +44,31 @@ import_avatar()
 tuesdata <- tidytuesdayR::tt_load(2020, week = 33)
 
 avatar_raw <- tuesdata$avatar %>%
-    #make charaters a factor
-    mutate(character = as.factor(character)) %>%
-    #group for summarising
-    select(book, chapter, chapter_num, character) %>%
-    #tally number of times a character speaks per episode
-    #remove scene discription
-    filter(character != "Scene Description") %>%
-    #cod elevels for books/seasons
-    mutate(book = factor(book, levels = c("Water", 
-                                          "Earth", 
-                                          "Fire")),
-           character = case_when(str_detect(character, "Toph")  ~ "Toph",
+        #make charaters a factor
+        mutate(character = as.factor(character)) %>%
+        #group for summarising
+        select(book, chapter, chapter_num, character) %>%
+        #tally number of times a character speaks per episode
+        #remove scene discription
+        filter(character != "Scene Description") %>%
+        #cod elevels for books/seasons
+        mutate(book = factor(book, levels = c("Water", 
+                                            "Earth", 
+                                            "Fire")),
+        #account for variations in names of main characters
+        character = case_when(str_detect(character, "Toph")  ~ "Toph",
                                  str_detect(character, "Aang")  ~ "Aang",
                                  str_detect(character, "Sokka")  ~ "Sokka",
                                  str_detect(character, "Katara")  ~ "Katara",
                                  str_detect(character, "Iroh")  ~ "Iroh",
                                  str_detect(character, "Ozai")  ~ "Ozai",
                                  str_detect(character, "Azula")  ~ "Azula",
-                                 str_detect(character, "Zuko")  ~ "Zuko",)                                      ) %>%
-    #arrange chronologically
-    arrange(book, chapter_num)
+                                 str_detect(character, "Zuko")  ~ "Zuko",
+                                 TRUE ~ as.character(character))) %>%
+        #arrange chronologically
+        arrange(book, chapter_num)
 
-### 1) Webscraping to get tribe data ----
+### 1) Webscraping to get tribe/kingdom data ----
 
 EarthKingdom <-
     read_html("https://avatar.fandom.com/wiki/Category:Earth_Kingdom_characters") %>%
@@ -112,9 +120,10 @@ CharacterList <-
     rbind(.,
           EarthKingdom)     
 
-#Combine with Avatar df
+### 2) COncatinate datasets ----
 
-avatar <- 
+#Combine with avatar_raw df
+avatar_interim <- 
     avatar_raw  %>% 
     left_join(.,
               CharacterList,
@@ -122,7 +131,7 @@ avatar <-
     #Toph is a special case
     mutate(Nation = case_when(character == "Toph" ~ "Earth Kingdom",
                               TRUE ~ Nation),
-           #new charter group for plotting  
+           #new charater_group for plotting - pulls out the main characters and assigns rest to their tribe 
            character_group = ifelse(character %in% c("Aang",
                                                      "Sokka",
                                                      "Katara",
@@ -141,14 +150,21 @@ avatar <-
     na.omit() %>%
     group_by(chapter, book, chapter_num, character_group, Nation)  %>% 
     arrange(book, chapter_num) %>% 
+    #get a tally for each group i.e chapter by character_group
     tally()  %>% 
     ungroup()  %>% 
+    #set levels for chapters
     mutate(episode = as.factor(as.integer(factor(chapter_num)))) %>%
     arrange(episode)  %>% 
+    #pivot wider to fill in zeros
     pivot_wider(id_cols = character_group, names_from = episode, values_from = n, values_fill = 0)  %>% 
-    pivot_longer(cols = -character_group) %>%
-    mutate(n_jittered = jitter(value, factor= 0.3),
-           name = as.numeric(name)) %>%
+    #pivor back to long form
+    pivot_longer(cols = -character_group)  %>% 
+    #convert 'anme' i.e. chapter to numeric
+    mutate(name = as.numeric(name))
+           
+avatar <-   
+    avatar_interim %>%
     filter(character_group %in% c("Aang",
                                   "Sokka",
                                   "Katara",
@@ -159,10 +175,10 @@ avatar <-
                                   "Toph"))
 
 #streamplot
-plot <- 
+#plot <- 
 ggplot(data = avatar,
-       aes(x = name,
-           y = value,
+       aes(x = name, #chapter number
+           y = value, #tally of dialogue
            fill = character_group
        )) +
     geom_stream(
@@ -261,6 +277,7 @@ ggplot(data = avatar,
                                   "Ch.53<br/><b style='color:#A10000'>Zuko</b>",
                                   "<br/><br/>Ch.54<br/><b style='color:#1DB4D3'>Sokka</b>"))
 
+
 ggsave("2020/week33_Avatar/LastWord.png", 
        plot, 
        height = 10, width = 15, 
@@ -268,5 +285,42 @@ ggsave("2020/week33_Avatar/LastWord.png",
 
 # End of script ----
 
-    
+#Bonus Stream plot with all kingdoms
+
+avatar_nations <-
+  avatar_interim %>% 
+  group_by(character_group) %>% 
+  slice(1:4) %>% 
+  #add 'tails' for smoother start/finish
+  mutate(
+    name = c(
+      min(avatar_interim$name) - 6, 
+      min(avatar_interim$name) - 3,
+      max(avatar_interim$name) + 3,
+      max(avatar_interim$name) + 6
+    ), 
+    value = c(0, .001, .001, 0)
+  )  %>% 
+  #combine with dataset
+  rbind(.,
+        avatar_interim)
+
+ggplot(data = avatar_nations,
+       aes(x = name, #chapter number
+           y = value, #tally of dialogue
+           fill = character_group
+       )) +
+    geom_stream(
+        geom = "contour",
+        color = "white",
+        size = 1.25,
+        bw = .1
+    ) +
+    geom_stream(
+        geom = "polygon",
+        #n_grid = 12000,
+        bw = .1,
+        size = 0,
+        alpha = 0.9) +            
+    theme_avatar(text.font = "Herculanum")
     
