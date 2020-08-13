@@ -22,21 +22,18 @@ library(magick)
 library(grid)
 library(png)
 
-loadfonts() ## You need to do this at the beginning of a session.
-
-showtext_auto()
-
-trace(grDevices::png, exit = quote({
-    showtext::showtext_begin()
-}), print = FALSE)
-
-
 #todays prompts
 options(prompt = "\U1F30A",
         continue = "\U1F525")
 
 # import fonts for theme
 import_avatar()
+font_add(family = "Herculanum", regular = "/Users/tanyastrydom/Documents/TidyTuesday/2020/week33_Avatar/Herculanum-Regular.ttf")
+showtext_auto()
+
+trace(grDevices::png, exit = quote({
+  showtext::showtext_begin()
+}), print = FALSE)
 
 ### >> b) Import data and clean ----
 
@@ -175,7 +172,7 @@ avatar <-
                                   "Toph"))
 
 #streamplot
-#plot <- 
+plot <- 
 ggplot(data = avatar,
        aes(x = name, #chapter number
            y = value, #tally of dialogue
