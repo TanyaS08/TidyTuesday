@@ -18,6 +18,7 @@ font_add_google("Montserrat",
 
 
 font_paths()
+
 font_files()
 font_families()
 
@@ -42,6 +43,7 @@ energy_types <- tuesdata$energy_types %>%
                                   country_name == "North Macedonia" ~ "N. Macedonia",
                                   TRUE ~ country_name),
          #lump hydro for cleaner plotting
+
          type = case_when(type == "Geothermal" ~ "Conventional",
                           type == "Conventional thermal" ~ "Conventional",
                           TRUE ~ "Renewable"))%>%
@@ -73,19 +75,23 @@ energy_types <-
             energy_totals,
             by = "country_name")
 
+
 energy_grid <-
   energy_types %>%
   distinct(country_name) %>%
   inner_join(.,
+
              europe_countries_grid2,
              by = c("country_name" = "name")) %>%
   rename("name" = "country_name") %>%
+
   ungroup() %>%
   add_row(row = 5, col = 10, code = "GE", name = "Georgia")
 
 ### 0) Plotting ----
 
 #TreeMaps
+
 
 #p2016 <-
   ggplot(energy_types) +
@@ -124,6 +130,7 @@ ggplot(data = tibble(x = seq(from = 0,
                              by = 0.1)),
        aes(x = x,
            y = x)) +
+
   geom_point(
     colour = "#fffff0"
   ) +
@@ -131,6 +138,7 @@ ggplot(data = tibble(x = seq(from = 0,
        subtitle = "Is Europe going Green?") +
   geom_textbox(aes(
     label = "Here we have the proportion of different enrgy types
+
     that make up the total energy production (in GWh) for 37 Europenan countries.
     ",
     x = 0,
@@ -142,6 +150,7 @@ ggplot(data = tibble(x = seq(from = 0,
     size = 3.5,
     width = 0.8,
     family = "Montserrat") +
+
   theme_void() +
   theme(plot.title =  element_text(family = "Bebas",
                                    vjust = 1,
