@@ -1,9 +1,3 @@
-#' ------------------------------------------------------------------#
-#'  European Energy
-#'  - Data and README can be found at:
-#'  (https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-04/readme.md)
-#' ------------------------------------------------------------------#
-
 
 ### 0) Preamble ----
 ### >> a) Dependencies ----
@@ -23,7 +17,8 @@ font_add_google("Montserrat",
                 "Montserrat")
 
 
-font_paths()  
+font_paths()
+
 font_files()
 font_families()
 
@@ -48,21 +43,48 @@ energy_types <- tuesdata$energy_types %>%
                                   country_name == "North Macedonia" ~ "N. Macedonia",
                                   TRUE ~ country_name),
          #lump hydro for cleaner plotting
-         type = case_when(type == "Pumped hydro power" ~ "Hydro",
+
+         type = case_when(type == "Geothermal" ~ "Conventional",
                           type == "Conventional thermal" ~ "Conventional",
-                          TRUE ~ type)) %>%
+                          TRUE ~ "Renewable"))%>%
   group_by(country_name, type) %>%
   #calcualte new totals
-  summarise_at(vars(c(`2016`, `2017`, `2018`)),
-               sum)
+  #summarise_at(vars(c(`2016`, `2017`, `2018`)),
+  #             sum) %>%
+  summarize(sum = sum(`2018`)) %>%
+  mutate(
+    total = sum(sum),
+    prop = sum / unique(total)
+  ) %>%
+  ungroup() %>%
+  filter(type == "Renewable")
+
+energy_totals <-
+  tuesdata$country_totals %>%
+  filter(type == "Total net production") %>%
+  mutate(net_tot = `2018`/max(`2018`),
+         country_name = case_when(is.na(country_name) ~ "UK",
+                                  country_name == "Bosnia & Herzegovina" ~ "Bosnia & H.",
+                                  country_name == "North Macedonia" ~ "N. Macedonia",
+                                  TRUE ~ country_name)) %>%
+  select(country_name, net_tot)
+
+energy_types <-
+  energy_types %>%
+  left_join(.,
+            energy_totals,
+            by = "country_name")
+
 
 energy_grid <-
   energy_types %>%
   distinct(country_name) %>%
   inner_join(.,
-            europe_countries_grid2,
-            by = c("country_name" = "name")) %>%
-  rename("name" = "country_name") %>% 
+
+             europe_countries_grid2,
+             by = c("country_name" = "name")) %>%
+  rename("name" = "country_name") %>%
+
   ungroup() %>%
   add_row(row = 5, col = 10, code = "GE", name = "Georgia")
 
@@ -70,109 +92,53 @@ energy_grid <-
 
 #TreeMaps
 
-p2016 <- ggplot(energy_types, 
-       aes(fill = type, 
-           area = `2016`,
-           label = type)) +
-  geom_treemap(show.legend = FALSE) +
-  geom_treemap_text(colour = "white", 
-                    place = "centre",
-                    grow = TRUE,
-                    family = "Bebas") +
-  facet_geo(~ country_name, 
-            grid = energy_grid, 
-            scales = "free_y") +
-  scale_fill_manual(values = c("#820707",
-                               "#7EE67E",
-                               "#35D45A",
-                               "#2d2b29",
-                               "#25943F",
-                               "#35613F",
-                               "#507157")) +
-  labs(title = "2016") +
-  theme(plot.background = element_rect(fill="#F4F9F5", color = NA),
-        panel.background = element_rect(fill="#F4F9F5", color = NA),
-        strip.background = element_rect(fill="#F4F9F5", 
-                                        color = "#F4F9F5"),
-        text = element_text(family = "Montserrat",
-                            size = 5),
-        plot.title = element_text(family = "Bebas",
-                                  size = 16))
 
-p2017 <- ggplot(energy_types, 
-                aes(fill = type, 
-                    area = `2017`,
-                    label = type)) +
-  geom_treemap(show.legend = FALSE) +
-  geom_treemap_text(colour = "white", 
-                    place = "centre",
-                    grow = TRUE,
-                    family = "Bebas") +
-  facet_geo(~ country_name, 
-            grid = energy_grid, 
-            scales = "free_y") +
-  scale_fill_manual(values = c("#820707",
-                               "#7EE67E",
-                               "#35D45A",
-                               "#2d2b29",
-                               "#25943F",
-                               "#35613F",
-                               "#507157")) +
-  labs(title = "2017") +
-  theme(plot.background = element_rect(fill="#F4F9F5", color = NA),
-        panel.background = element_rect(fill="#F4F9F5", color = NA),
-        strip.background = element_rect(fill="#F4F9F5", 
-                                        color = "#F4F9F5"),
-        text = element_text(family = "Montserrat",
-                            size = 5),
-        plot.title = element_text(family = "Bebas",
-                                  size = 16))
-
-p2018 <- ggplot(energy_types, 
-                aes(fill = type, 
-                    area = `2018`,
-                    label = type)) +
-  geom_treemap(show.legend = FALSE) +
-  geom_treemap_text(colour = "white", 
-                    place = "centre",
-                    grow = TRUE,
-                    family = "Bebas") +
-  facet_geo(~ country_name, 
-            grid = energy_grid, 
-            scales = "free_y") +
-  scale_fill_manual(values = c("#820707",
-                               "#7EE67E",
-                               "#35D45A",
-                               "#2d2b29",
-                               "#25943F",
-                               "#35613F",
-                               "#507157")) +
+#p2016 <-
+  ggplot(energy_types) +
+  geom_rect(aes(ymax = prop,
+                ymin = 0,
+                xmax = (2 + net_tot),
+                xmin = (1 + net_tot)),
+            fill = "#49C484") +
+  xlim(c(0, 3)) +
+  coord_polar(theta="y") +
+  facet_geo(~ country_name,
+            grid = energy_grid) +
   labs(title = "2018") +
+  theme_void() +
   theme(plot.background = element_rect(fill="#F4F9F5", color = NA),
         panel.background = element_rect(fill="#F4F9F5", color = NA),
-        strip.background = element_rect(fill="#F4F9F5", 
+        strip.background = element_rect(fill="#F4F9F5",
                                         color = "#F4F9F5"),
-        strip.text = element_text(family = "Montserrat",
-                                  size = 5),
+        text = element_text(family = "Montserrat",
+                            size = 8),
         plot.title = element_text(family = "Bebas",
-                                  size = 16))
+                                  size = 16),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank())
 
-#inset <-
-  ggplot(data = tibble(x = seq(from = 0,
-                               to = 1,
-                               by = 0.1),
-                       y = seq(from = 0,
-                               to = 1,
-                               by = 0.1)),
-         aes(x = x,
-             y = x)) +
+
+inset <-
+ggplot(data = tibble(x = seq(from = 0,
+                             to = 1,
+                             by = 0.1),
+                     y = seq(from = 0,
+                             to = 1,
+                             by = 0.1)),
+       aes(x = x,
+           y = x)) +
+
   geom_point(
     colour = "#fffff0"
   ) +
   labs(title = "EUROPEAN ENERGY",
        subtitle = "Is Europe going Green?") +
   geom_textbox(aes(
-    label = "Here we have the proportion of different enrgy types 
+    label = "Here we have the proportion of different enrgy types
+
     that make up the total energy production (in GWh) for 37 Europenan countries.
     ",
     x = 0,
@@ -184,6 +150,8 @@ p2018 <- ggplot(energy_types,
     size = 3.5,
     width = 0.8,
     family = "Montserrat") +
+
+  theme_void() +
   theme(plot.title =  element_text(family = "Bebas",
                                    vjust = 1,
                                    size = 42),
@@ -201,8 +169,7 @@ p2018 <- ggplot(energy_types,
         panel.grid = element_blank())
 
 
-plot_grid(inset,
-          p2016,
+plot_grid(p2016,
           p2017,
           p2018)
 
