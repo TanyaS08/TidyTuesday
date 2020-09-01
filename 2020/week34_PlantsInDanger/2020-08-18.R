@@ -1,5 +1,5 @@
 #' ------------------------------------------------------------------#
-#'  AVATAR
+#'  PLANTS IN DNAGER
 #'  - Data and README can be found at:
 #'  (https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-08-18)
 #' ------------------------------------------------------------------#
