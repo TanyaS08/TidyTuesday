@@ -20,6 +20,8 @@ Quick Link
 My contributions to [#TidyTuesday](https://github.com/rfordatascience/tidytuesday).
 Feedback is is always appreciated via [Twitter](https://twitter.com/cedscherer).
 
+*Update pending*
+
 </div>
 
 ***
