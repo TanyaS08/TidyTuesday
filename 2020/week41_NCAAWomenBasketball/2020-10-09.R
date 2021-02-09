@@ -6,7 +6,6 @@
 
 ### 0) Preamble ----
 ### >> a) Dependencies ----
-library(tidytext)
 library(tidyverse)
 library(tidylog)
 
