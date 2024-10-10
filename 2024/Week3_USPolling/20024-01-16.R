@@ -26,7 +26,7 @@ library(showtext)
 
 #todays prompts
 options(prompt = "\U270D",
-        continue = "\U1F1E8, \U1F1E6")
+        continue = "\1F4DC")
 
 ### >> d) Data import ----
 
