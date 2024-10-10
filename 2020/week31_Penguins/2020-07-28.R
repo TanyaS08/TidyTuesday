@@ -24,6 +24,7 @@ library(mdthemes)
 library(gt)
 library(sysfonts)
 library(showtext)
+library(patchwork)
 
 
 font_add_google("Fredericka the Great",
@@ -275,19 +276,23 @@ ggplot(data = tibble(x = seq(from = 0,
         axis.text = element_blank(),
         axis.ticks = element_blank())
 
+# import penguin image
+penguins <- png::readPNG("2020/week31_Penguins/penguins.png", native = TRUE)
+
 plot <- 
-  ggdraw(main) +
-  draw_plot(antarctica, .02, .0, 1, .8) +
-  draw_plot(plot_chin, .01, .45, .43, .35) +
-  draw_plot(ridge, .53, .19, .45, .35) +
-  draw_plot(adelie_plot, .01, .0, .4, .37) +
-  draw_image("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/man/figures/lter_penguins.png", 
-             0.67, 0.65, .3, .3)
+main +
+  inset_element(antarctica, 0, 0, 1, 0.8, align_to = 'full') +
+  inset_element(ridge, .53, .19,  .9, .6, align_to = 'full') +
+  inset_element(plot_chin, .01, .45, .43, 0.8, align_to = 'full') +
+  inset_element(adelie_plot, .01, .0, .4, .37, align_to = 'full') +
+  (inset_element(penguins, 0.7, 0.65, .98, .98, align_to = 'full') + 
+    theme_void())
 
-
-ggsave("2020/week31_Penguins/NewDatasetInTown.png", 
+showtext_auto()
+showtext::showtext_opts(dpi = 600)
+ggsave("2020/week31_Penguins/NewDatasetInTown.png",
        plot, 
-       height = 8.3, width = 15, 
+       height = 8.3, width = 15,
        units = "in", dpi = 600)
 
 
